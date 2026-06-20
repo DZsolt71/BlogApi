@@ -24,7 +24,7 @@ namespace BlogApi.Controllers
             {
                 var blogger = new Blogger
                 {
-                    Username = addBloggerDto.Username,
+                    UserName = addBloggerDto.UserName,
                     Password = addBloggerDto.Password,
                     Email = addBloggerDto.Email
                 };
@@ -34,23 +34,23 @@ namespace BlogApi.Controllers
                     await _blogContext.Bloggers.AddAsync(blogger);
                     await _blogContext.SaveChangesAsync();
 
-                    return StatusCode(201, new {message = "Sikeres felvétel.", result=blogger});
+                    return StatusCode(201, new { message = "Sikeres felvétel.", result = blogger });
                 }
 
                 return StatusCode(404, new { message = "Sikertelen felvétel.", result = blogger });
             }
             catch (Exception ex)
             {
-               return StatusCode(400, new { message = ex.Message });
+                return StatusCode(400, new { message = ex.Message });
             }
         }
 
         [HttpGet]
-        public async Task<ActionResult> GetAllBlogger()
+        public async Task<ActionResult> GettAllBlogger()
         {
             try
             {
-                return Ok(new { message = "Sikeres lekérdezés", result = await _blogContext.Bloggers.ToListAsync()});
+                return Ok(new { message = "Sikeres lekérdezés", result = await _blogContext.Bloggers.ToListAsync() });
             }
             catch (Exception ex)
             {
@@ -70,7 +70,7 @@ namespace BlogApi.Controllers
                     return Ok(new { message = "Sikeres lekérdezés", result = blogger });
                 }
 
-                return StatusCode(404, new { message = "Sikertelen lekérdezés.", result = blogger });
+                return StatusCode(404, new { message = "Sikertelen felvétel.", result = blogger });
             }
             catch (Exception ex)
             {
@@ -122,6 +122,62 @@ namespace BlogApi.Controllers
             catch (Exception ex)
             {
                 return StatusCode(400, new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("getAllBloggerData")]
+        public async Task<ActionResult> GetAllBloggerData(int id)
+        {
+            try
+            {
+                var bloggerData = await _blogContext.Bloggers
+                    .Include(x => x.Posts)
+                    .Where(x => x.Id == id)
+                    .ToListAsync();
+
+
+
+                if (bloggerData != null)
+                {
+                    return Ok(new { message = "Sikeres lekérdezés", result = bloggerData });
+                }
+
+                return StatusCode(404, new { message = "Sikertelen felvétel.", result = bloggerData });
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(400, new { message = ex.Message });
+
+            }
+        }
+
+        [HttpGet("bloggerNameAndPostContent")]
+        public async Task<ActionResult> BloggerNameAndPostContent(int id)
+        {
+            try
+            {
+                var bloggerData = await _blogContext.Bloggers
+                    .Where(x => x.Id == id)
+                    .Select(x => new
+                    {
+                        BloggerName = x.UserName,
+                        Posts = x.Posts.Select(p => new { p.Content })
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (bloggerData != null)
+                {
+                    return Ok(new { message = "Sikeres lekérdezés", result = bloggerData });
+                }
+
+                return StatusCode(404, new { message = "Nincs találat.", result = bloggerData });
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(400, new { message = ex.Message });
+
             }
         }
     }
